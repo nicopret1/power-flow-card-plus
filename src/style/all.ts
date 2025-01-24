@@ -16,6 +16,8 @@ export const allDynamicStyles = (
   {
     grid,
     solar,
+    generator, // Add generator
+    supply,    // Add supply
     entities,
     individual,
     battery,
@@ -27,6 +29,96 @@ export const allDynamicStyles = (
     isCardWideEnough,
   }: AllDynamicStyles
 ) => {
+  // Supply
+  main.style.setProperty(
+    "--icon-supply-color",
+    supply.color?.icon_type === "export"
+      ? "var(--energy-supply-export-color)"
+      : supply.color?.icon_type === true
+      ? "var(--energy-supply-color)"
+      : "var(--primary-text-color)"
+  );
+
+  main.style.setProperty(
+    "--circle-supply-color",
+    supply.color?.circle_type === "export"
+      ? "var(--energy-supply-export-color)"
+      : supply.color?.circle_type === true
+      ? "var(--energy-supply-color)"
+      : "var(--energy-supply-color)"
+  );
+
+  if (supply.color.fromGrid !== undefined) {
+    if (typeof supply.color.fromGrid === "object") {
+      supply.color.fromGrid = convertColorListToHex(supply.color.fromGrid);
+    }
+    main.style.setProperty("--energy-supply-color", supply.color.fromGrid || "#00BCD4"); // Default to teal
+  }
+
+  if (supply.color.toGrid !== undefined) {
+    if (typeof supply.color.toGrid === "object") {
+      supply.color.toGrid = convertColorListToHex(supply.color.toGrid);
+    }
+    main.style.setProperty("--energy-supply-export-color", supply.color.toGrid || "#FF9800"); // Default to orange
+  }
+
+  main.style.setProperty(
+    "--secondary-text-supply-color",
+    supply.secondary?.color.type === "export"
+      ? "var(--energy-supply-export-color)"
+      : supply.secondary?.color.type === true
+      ? "var(--energy-supply-color)"
+      : "var(--primary-text-color)"
+  );
+
+  if (entities.supply?.color_value === false) {
+    main.style.setProperty("--text-supply-color", "var(--primary-text-color)");
+  } else {
+    main.style.setProperty("--text-supply-color", "var(--energy-supply-color)");
+  }
+
+ 
+  // Generator
+  main.style.setProperty(
+    "--icon-generator-color",
+    generator.color.icon_type === "consumption"
+      ? "var(--energy-generator-consumption-color)"
+      : generator.color.icon_type === true
+      ? "var(--energy-generator-consumption-color)"
+      : "var(--primary-text-color)"
+  );
+
+  main.style.setProperty(
+    "--circle-generator-color",
+    generator.color.circle_type === "consumption"
+      ? "var(--energy-generator-consumption-color)"
+      : generator.color.circle_type === true
+      ? "var(--energy-generator-consumption-color)"
+      : "var(--energy-generator-consumption-color)"
+  );
+
+  if (generator.color.fromGenerator !== undefined) {
+    if (typeof generator.color.fromGenerator === "object") {
+      generator.color.fromGenerator = convertColorListToHex(generator.color.fromGenerator);
+    }
+    main.style.setProperty("--energy-generator-consumption-color", generator.color.fromGenerator || "#FFA500"); // Default to orange
+  }
+
+  main.style.setProperty(
+    "--secondary-text-generator-color",
+    generator.secondary?.color.type === "consumption"
+      ? "var(--energy-generator-consumption-color)"
+      : generator.secondary?.color.type === true
+      ? "var(--energy-generator-consumption-color)"
+      : "var(--primary-text-color)"
+  );
+
+  if (entities.generator?.color_value === false) {
+    main.style.setProperty("--text-generator-consumption-color", "var(--primary-text-color)");
+  } else {
+    main.style.setProperty("--text-generator-consumption-color", "var(--energy-generator-consumption-color)");
+  }
+
   // Grid
   main.style.setProperty(
     "--icon-grid-color",

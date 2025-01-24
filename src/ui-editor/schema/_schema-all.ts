@@ -9,7 +9,9 @@ import { individualSchema } from "./individual";
 import { nonFossilSchema } from "./fossil_fuel_percentage";
 import { homeSchema } from "./home";
 import { displayZeroLinesSchema } from "./display_zero_lines";
-import { mdiBattery90, mdiBatteryHigh, mdiCog, mdiHome, mdiLeaf, mdiTransmissionTower, mdiWeatherSunny } from "@mdi/js";
+import { mdiBattery90, mdiBatteryHigh, mdiCog, mdiHome, mdiLeaf, mdiTransmissionTower, mdiWeatherSunny, mdiPowerGenerator } from "@mdi/js"; // Added mdiPowerGenerator
+import { generatorSchema } from "./generator"; // Import generatorSchema
+import { supplySchema } from "./supply"; // Import supplySchema
 
 const baseLovelaceCardConfig = object({
   type: string(),
@@ -49,6 +51,8 @@ export const cardConfigStruct = assign(
       home: optional(any()),
       fossil_fuel_percentage: optional(any()),
       individual: optional(any()),
+      generator: optional(any()), // Added generator entity
+      supply: optional(any()),    // Added supply entity
     }),
   })
 );
@@ -87,6 +91,20 @@ export const entitiesSchema = memoizeOne((localize) => [
         type: "expandable",
         iconPath: mdiBatteryHigh,
         schema: batterySchema,
+      },
+      {
+        title: localize("editor.generator"),
+        name: "generator",
+        type: "expandable",
+        iconPath: mdiPowerGenerator, // Icon for Generator
+        schema: generatorSchema,     // Generator schema
+      },
+      {
+        title: localize("editor.supply"),
+        name: "supply",
+        type: "expandable",
+        iconPath: mdiCog, // Use an appropriate icon for Supply
+        schema: supplySchema, // Supply schema
       },
       {
         title: localize("editor.fossil_fuel_percentage"),

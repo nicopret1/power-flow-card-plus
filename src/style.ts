@@ -17,16 +17,22 @@ export const styles = css`
     --icon-grid-color: var(--energy-grid-consumption-color, #488fc2);
     --icon-battery-color: var(--energy-battery-in-color, #f06292);
     --icon-home-color: var(--energy-grid-consumption-color, #488fc2);
+    --icon-supply-color: var(--circle-supply-color); /* Icon color matches circle color */
+    --icon-supply-export-color: var(--circle-supply-export-color, #ff9800); /* Export arrow color */
     --text-solar-color: var(--primary-text-color);
     --text-non-fossil-color: var(--primary-text-color);
     --text-individual-bottom-color: var(--primary-text-color);
     --text-individual-top-color: var(--primary-text-color);
     --text-home-color: var(--primary-text-color);
+    --text-supply-color: var(--primary-text-color); /* Text color inside supply circle */
+    --text-supply-export-color: var(--energy-supply-export-color, #ff9800); /* Orange for export text */
+    --text-battery-state-of-charge-color: var(--primary-text-color);
     --secondary-text-individual-bottom-color: var(--primary-text-color);
     --secondary-text-individual-top-color: var(--primary-text-color);
-    --text-battery-state-of-charge-color: var(--primary-text-color);
     --cirlce-grid-color: var(--energy-grid-consumption-color, #488fc2);
     --circle-battery-color: var(--energy-battery-in-color, #f06292);
+    --circle-supply-color: var(--energy-supply-color, #00bcd4); /* Default teal for supply circle border */
+    --circle-supply-export-color: var(--energy-supply-export-color, #ff9800); /* Optional color for export to grid */ 
     --battery-grid-line: var(--energy-grid-return-color, #8353d1);
     --secondary-text-solar-color: var(--primary-text-color);
     --secondary-text-grid-color: var(--primary-text-color);
@@ -180,10 +186,41 @@ export const styles = css`
     top: -20px;
     margin-bottom: -20px;
   }
-  .circle-container.battery {
+  .circle-container.battery  {
     height: 110px;
     justify-content: flex-end;
   }
+
+  .circle-container.supply {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 130px; /* Adjust height as needed */
+  }
+
+  .circle-container.supply .circle {
+    border-color: var(--circle-supply-color); /* Border uses centralised variable */
+  }
+
+  .circle-container.supply .circle svg {
+    fill: none;
+    stroke: var(--circle-supply-color); /* Stroke uses centralised variable */
+    stroke-width: 4px;
+  }
+
+  .circle-container.supply .export {
+    position: absolute;
+    top: -10px; /* Adjust placement as needed */
+    right: 0;
+    font-size: 12px;
+    color: var(--text-supply-export-color); /* Export text uses updated variable */
+  }
+
+  .circle-container.supply .value {
+    font-size: 14px;
+    color: var(--text-supply-color); /* Circle text uses updated variable */
+  }
+
   .spacer {
     width: var(--size-circle-entity);
   }

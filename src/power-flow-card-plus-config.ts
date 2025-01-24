@@ -58,6 +58,30 @@ interface Grid extends BaseConfigEntity {
   color?: ComboEntity;
 }
 
+interface Generator extends BaseConfigEntity {
+  entity?: string; // Optional entity for generator power
+  color?: any;
+  color_icon?: boolean;
+  color_value?: boolean;
+  color_label?: boolean;
+  secondary_info?: SecondaryInfoType;
+  display_state?: "one_way" | "one_way_no_zero"; // Limit to one-way flows
+  unit_white_space?: boolean;
+  decimals?: number; // For display precision
+  color_circle?: boolean | "consumption"; // Define circle coloring logic
+}
+
+interface Supply extends BaseConfigEntity {
+  entity?: string; // Optional entity for supply aggregation
+  color_circle?: boolean | "consumption" | "export"; // Circle color logic for input/export
+  color_value?: boolean;
+  color?: ComboEntity | string;
+  secondary_info?: SecondaryInfoType;
+  display_state?: "two_way"; // Allow both input and export
+  unit_white_space?: boolean;
+  decimals?: number; // For display precision
+}
+
 interface Solar extends BaseConfigEntity {
   entity: string;
   color?: any;
@@ -100,8 +124,11 @@ export type ConfigEntities = {
   home?: Home;
   fossil_fuel_percentage?: FossilFuelPercentage;
   individual?: IndividualField;
+  generator?: Generator; // Add generator entity
+  supply?: Supply;       // Add supply entity
 };
 
-export type ConfigEntity = Battery | Grid | Solar | Home | FossilFuelPercentage | IndividualDeviceType;
+
+export type ConfigEntity = Battery | Grid | Solar | Home | FossilFuelPercentage | IndividualDeviceType | Generator | Supply;
 
 export const MAX_INDIVIDUAL_ENTITIES = 4;

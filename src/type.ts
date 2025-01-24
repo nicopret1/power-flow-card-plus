@@ -21,7 +21,7 @@ export type SecondaryInfoType = {
 };
 
 export interface BaseConfigEntity {
-  entity: string | ComboEntity;
+  entity?: string | ComboEntity; // Make this optional
   name?: string;
   icon?: string;
   color?: ComboEntity | string;
@@ -65,6 +65,8 @@ export type TemplatesObj = {
   gridSecondary: string | undefined;
   solarSecondary: string | undefined;
   homeSecondary: string | undefined;
+  generatorSecondary?: string | undefined; // Added generator
+  supplySecondary?: string | undefined;    // Added supply
   individual: (string | undefined)[];
   nonFossilFuelSecondary: string | undefined;
 };
@@ -108,6 +110,7 @@ export type GridObject = {
     toGrid: number | null;
     toBattery: number | null;
     toHome: number | null;
+    fromGenerator?: number | null; // Add this for the generator's contribution
   };
   powerOutage: {
     has: boolean;
@@ -122,6 +125,7 @@ export type GridObject = {
   color: {
     fromGrid?: string;
     toGrid?: string;
+    fromGenerator?: string; // Add color handling for the generator
     icon_type?: boolean | "production" | "consumption";
     circle_type?: boolean | "production" | "consumption";
   };
@@ -141,6 +145,23 @@ export type GridObject = {
       type?: boolean | "production" | "consumption";
     };
   };
+};
+
+export type SupplyObject = {
+  state: {
+    fromGrid: number;        // Power from the Grid to Supply (default to 0 if undefined)
+    fromGenerator: number;   // Power from the Generator to Supply (default to 0 if undefined)
+    toGrid: number;          // Power exported to the Grid from Supply (default to 0 if undefined)
+    totalSupply: number;     // Total supply (fromGrid + fromGenerator)
+  };
+  name: string;              // Displayed name of the supply entity
+  color?: {
+    grid?: string;           // Color for Grid contribution
+    generator?: string;      // Color for Generator contribution
+    supply?: string;         // Color for Supply circle
+    toGrid?: string;         // Color for export to Grid
+  };
+  icon?: string;             // Icon for the supply circle
 };
 
 export type OfflineStr = "unavailable" | "unknown";

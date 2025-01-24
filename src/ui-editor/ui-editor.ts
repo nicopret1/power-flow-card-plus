@@ -19,6 +19,8 @@ import { solarSchema } from "./schema/solar";
 import { batterySchema } from "./schema/battery";
 import { nonFossilSchema } from "./schema/fossil_fuel_percentage";
 import { homeSchema } from "./schema/home";
+import { generatorSchema } from "./schema/generator"; // Import generator schema
+import { supplySchema } from "./schema/supply"; // Import supply schema
 import { ConfigPage } from "./types/config-page";
 
 const CONFIG_PAGES: {
@@ -40,6 +42,16 @@ const CONFIG_PAGES: {
     page: "battery",
     icon: "mdi:battery-high",
     schema: batterySchema,
+  },
+  {
+    page: "generator", // Add generator page
+    icon: "mdi:power-generator",
+    schema: generatorSchema,
+  },
+  {
+    page: "supply", // Add supply page
+    icon: "mdi:transmission-tower-import",
+    schema: supplySchema,
   },
   {
     page: "fossil_fuel_percentage",

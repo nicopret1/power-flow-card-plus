@@ -15,6 +15,7 @@ import { getEntityState } from "./states/utils/getEntityState";
 import { doesEntityExist } from "./states/utils/existenceEntity";
 import { computeFlowRate } from "./utils/computeFlowRate";
 import { getGridConsumptionState, getGridProductionState, getGridSecondaryState } from "./states/raw/grid";
+import { getGeneratorConsumptionState } from "./states/raw/generator";
 import { getSolarSecondaryState } from "./states/raw/solar";
 import { getSolarState } from "./states/raw/solar";
 import { getBatteryInState, getBatteryOutState, getBatteryStateOfCharge } from "./states/raw/battery";
@@ -28,6 +29,9 @@ import { allDynamicStyles } from "./style/all";
 import { nonFossilElement } from "./components/nonFossil";
 import { solarElement } from "./components/solar";
 import { gridElement } from "./components/grid";
+import { generatorElement } from "./components/generator";
+import { supplyElement } from "./components/supply";
+import { SupplyObject } from "./type";
 import { homeElement } from "./components/home";
 import { batteryElement } from "./components/battery";
 import { flowElement } from "./components/flows";
@@ -47,6 +51,7 @@ import { individualRightTopElement } from "./components/individualRightTopElemen
 import { individualRightBottomElement } from "./components/individualRightBottomElement";
 import { fireEvent } from "./ui-editor/utils/fire_event";
 import { handleAction } from "./ha/panels/lovelace/common/handle-action";
+import { ConfigEntity } from "./power-flow-card-plus-config";
 
 const circleCircumference = 238.76104;
 
@@ -216,6 +221,78 @@ export class PowerFlowCardPlus extends LitElement {
       },
     };
 
+    const generator: GridObject = {
+      entity: entities.generator?.entity,
+      has: entities?.generator?.entity !== undefined,
+      hasReturnToGrid: false, // Generators typically don't return power to the grid
+      state: {
+        fromGrid: null, // Not applicable for generators
+        toGrid: null,   // Not applicable for generators
+        fromGenerator: getGeneratorConsumptionState(this.hass, this._config),
+        toBattery: initialNumericState,
+        toHome: initialNumericState,
+      },
+      powerOutage: {
+        has: false, // Assuming generators don't handle power outage scenarios like grids
+        isOutage: false,
+        icon: "",   // Default empty icon
+        name: "",
+        entityGenerator: undefined,
+      },
+      secondary: {
+        entity: entities.generator?.secondary_info?.entity,
+        decimals: entities.generator?.secondary_info?.decimals,
+        template: entities.generator?.secondary_info?.template,
+        has: entities.generator?.secondary_info?.entity !== undefined,
+        state: null, // Placeholder for computed secondary state
+        icon: entities.generator?.secondary_info?.icon,
+        unit: entities.generator?.secondary_info?.unit_of_measurement,
+        unit_white_space: entities.generator?.secondary_info?.unit_white_space,
+        accept_negative: false,
+        color: {
+          type: entities.generator?.secondary_info?.color_value,
+        },
+        tap_action: entities.generator?.secondary_info?.tap_action,
+      },
+      icon: entities.generator?.entity
+        ? computeFieldIcon(this.hass, entities.generator as ConfigEntity, "mdi:power-generator")
+        : "mdi:alert", // Fallback icon if entity is undefined
+      name: entities.generator?.entity
+        ? computeFieldName(this.hass, entities.generator as ConfigEntity, "Generator")
+        : "Unknown Generator", // Fallback name if entity is undefined
+      mainEntity: entities.generator?.entity,
+      color: {
+        fromGenerator: entities.generator?.color?.consumption,
+        icon_type: entities.generator?.color_icon,
+        circle_type: entities.generator?.color_circle,
+      },
+      tap_action: entities.generator?.tap_action,
+    };
+
+    const supply: SupplyObject | undefined = grid.has || generator.has
+    ? {
+        state: {
+          fromGrid: grid.state.fromGrid || 0,           // Power from Grid
+          fromGenerator: generator.state.fromGenerator || 0, // Power from Generator
+          toGrid: grid.state.toGrid || 0,              // Export excess power to Grid
+          totalSupply: (grid.state.fromGrid || 0) + (generator.state.fromGenerator || 0), // Total incoming power
+        },
+        name: "Supply",
+        color: {
+          grid: entities.grid?.color?.consumption ?? "var(--icon-grid-color)", // Fallback to default Grid color
+          generator: entities.generator?.color?.consumption ?? "var(--icon-generator-color)", // Fallback to Generator color
+          toGrid: entities.grid?.color?.production ?? "var(--icon-grid-production-color)", // Fallback to export color
+          supply: "var(--icon-supply-color)", // Default Supply color
+        },
+        icon: "mdi:transmission-tower", // Default icon
+      }
+    : undefined;
+  
+    // Update the icon dynamically based on the export state
+    if (supply) {
+      supply.icon = supply.state.toGrid > 0 ? "mdi:export" : "mdi:transmission-tower";
+    }
+      
     const solar = {
       entity: entities.solar?.entity as string | undefined,
       has: entities.solar?.entity !== undefined,
@@ -529,8 +606,9 @@ export class PowerFlowCardPlus extends LitElement {
       gridSecondary: this._templateResults.gridSecondary?.result,
       solarSecondary: this._templateResults.solarSecondary?.result,
       homeSecondary: this._templateResults.homeSecondary?.result,
-
       nonFossilFuelSecondary: this._templateResults.nonFossilFuelSecondary?.result,
+      generatorSecondary: this._templateResults.generatorSecondary?.result, // Added generator
+      supplySecondary: this._templateResults.supplySecondary?.result,     // Added supply
       individual: individualObjs?.map((_, index) => this._templateResults[`${individualKeys[index]}Secondary`]?.result) || [],
     };
 
@@ -566,53 +644,66 @@ export class PowerFlowCardPlus extends LitElement {
           id="power-flow-card-plus"
           style=${this._config.style_card_content ? this._config.style_card_content : ""}
         >
-          ${solar.has || individualObjs?.some((individual) => individual?.has) || nonFossil.hasPercentage
-            ? html`<div class="row">
-                ${nonFossilElement(this, this._config, {
-                  entities,
-                  grid,
-                  newDur,
-                  nonFossil,
-                  templatesObj,
-                })}
-                ${solar.has
-                  ? solarElement(this, this._config, {
-                      entities,
-                      solar,
-                      templatesObj,
-                    })
-                  : individualObjs?.some((individual) => individual?.has)
-                  ? html`<div class="spacer"></div>`
-                  : ""}
-                ${individualFieldLeftTop
-                  ? individualLeftTopElement(this, this._config, {
-                      individualObj: individualFieldLeftTop,
-                      displayState: getIndividualDisplayState(individualFieldLeftTop),
-                      newDur,
-                      templatesObj,
-                    })
-                  : html`<div class="spacer"></div>`}
-                ${checkHasRightIndividual(this._config, individualObjs)
-                  ? individualRightTopElement(this, this._config, {
-                      displayState: getIndividualDisplayState(individualFieldRightTop),
-                      individualObj: individualFieldRightTop,
-                      newDur,
-                      templatesObj,
-                      battery,
-                      individualObjs,
-                    })
-                  : html``}
-              </div>`
+          <!-- Top Row: Solar, Individual, Grid -->
+          ${(solar.has || grid.has || individualObjs?.some((individual) => individual?.has) || nonFossil.hasPercentage)
+            ? html`
+                <div class="row">
+                  ${nonFossilElement(this, this._config, {
+                    entities,
+                    grid,
+                    newDur,
+                    nonFossil,
+                    templatesObj,
+                  })}
+                  ${solar.has
+                    ? solarElement(this, this._config, {
+                        entities,
+                        solar,
+                        templatesObj,
+                      })
+                    : html`<div class="spacer"></div>`}
+                  ${grid.has
+                    ? gridElement(this, this._config, { entities: this._entities, grid, templatesObj: this._templatesObj })
+                    : ""}
+                  ${individualFieldLeftTop
+                    ? individualLeftTopElement(this, this._config, {
+                        individualObj: individualFieldLeftTop,
+                        displayState: getIndividualDisplayState(individualFieldLeftTop),
+                        newDur,
+                        templatesObj,
+                      })
+                    : html`<div class="spacer"></div>`}
+                  ${checkHasRightIndividual(this._config, individualObjs)
+                    ? individualRightTopElement(this, this._config, {
+                        displayState: getIndividualDisplayState(individualFieldRightTop),
+                        individualObj: individualFieldRightTop,
+                        newDur,
+                        templatesObj,
+                        battery,
+                        individualObjs,
+                      })
+                    : html``}
+                </div>
+              `
             : html``}
+
+          <!-- Middle Row: Centralized Input Hub -->
+          ${supply
+            ? html`
+                <div class="row">
+                  ${supplyElement(this, this._config, { entities: this._entities, supply, templatesObj: this._templatesObj })}
+                </div>
+              `
+            : ""}
+
+          <!-- Bottom Row: Generator and Outputs -->
           <div class="row">
-            ${grid.has
-              ? gridElement(this, this._config, {
-                  entities,
-                  grid,
-                  templatesObj,
-                })
+            ${generator.has
+              ? generatorElement(this, this._config, { entities: this._entities, generator, templatesObj: this._templatesObj })
+              : ""}
+            ${battery.has
+              ? batteryElement(this, this._config, { battery, entities })
               : html`<div class="spacer"></div>`}
-            <div class="spacer"></div>
             ${homeElement(this, this._config, {
               circleCircumference,
               entities,
@@ -627,33 +718,19 @@ export class PowerFlowCardPlus extends LitElement {
               homeUsageToDisplay,
               individual: individualObjs,
             })}
-            ${checkHasRightIndividual(this._config, individualObjs) ? html` <div class="spacer"></div>` : html``}
+            ${checkHasRightIndividual(this._config, individualObjs)
+              ? individualRightBottomElement(this, this._config, {
+                  displayState: getIndividualDisplayState(individualFieldRightBottom),
+                  individualObj: individualFieldRightBottom,
+                  newDur,
+                  templatesObj,
+                  battery,
+                  individualObjs,
+                })
+              : html``}
           </div>
-          ${battery.has || checkHasBottomIndividual(this._config, individualObjs)
-            ? html`<div class="row">
-                <div class="spacer"></div>
 
-                ${battery.has ? batteryElement(this, this._config, { battery, entities }) : html`<div class="spacer"></div>`}
-                ${individualFieldLeftBottom
-                  ? individualLeftBottomElement(this, this.hass, this._config, {
-                      displayState: getIndividualDisplayState(individualFieldLeftBottom),
-                      individualObj: individualFieldLeftBottom,
-                      newDur,
-                      templatesObj,
-                    })
-                  : html`<div class="spacer"></div>`}
-                ${checkHasRightIndividual(this._config, individualObjs)
-                  ? individualRightBottomElement(this, this._config, {
-                      displayState: getIndividualDisplayState(individualFieldRightBottom),
-                      individualObj: individualFieldRightBottom,
-                      newDur,
-                      templatesObj,
-                      battery,
-                      individualObjs,
-                    })
-                  : html``}
-              </div>`
-            : html`<div class="spacer"></div>`}
+          <!-- Flow Arrows -->
           ${flowElement(this._config, {
             battery,
             grid,
@@ -688,6 +765,8 @@ export class PowerFlowCardPlus extends LitElement {
       homeSecondary: entities.home?.secondary_info?.template,
       individualSecondary: entities.individual?.map((individual) => individual.secondary_info?.template),
       nonFossilFuelSecondary: entities.fossil_fuel_percentage?.secondary_info?.template,
+      generatorSecondary: entities.generator?.secondary_info?.template,
+      supplySecondary: entities.supply?.secondary_info?.template,
     };
 
     for (const [key, value] of Object.entries(templatesObj)) {
@@ -746,6 +825,8 @@ export class PowerFlowCardPlus extends LitElement {
       solarSecondary: entities.solar?.secondary_info?.template,
       homeSecondary: entities.home?.secondary_info?.template,
       individualSecondary: entities.individual?.map((individual) => individual.secondary_info?.template),
+      generatorSecondary: entities.generator?.secondary_info?.template,
+      supplySecondary: entities.supply?.secondary_info?.template,      
     };
 
     for (const [key, value] of Object.entries(templatesObj)) {
